@@ -6,6 +6,8 @@ A CLI tool to walk through DNS zones using NSEC responses and enumerate the doma
 
 ## Usage
 
+Install via npx: `npm i -g zone-walker`, or use npx: `npx zone-walker ...`.
+
 ```
 Usage: zone-walker [options] <zone>
 
