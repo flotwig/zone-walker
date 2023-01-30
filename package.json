@@ -1,0 +1,25 @@
+{
+  "name": "zone-walker",
+  "version": "0.0.0-dev1",
+  "description": "Walks through DNS zones using NSEC responses and write found domains to stdout.",
+  "main": "index.js",
+  "repository": "https://github.com/flotwig/zone-walker",
+  "author": "Zach Bloomquist <zone-walker@chary.us>",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^10.0.0",
+    "getdns": "^4.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.33.0"
+  },
+  "scripts": {
+    "lint": "eslint --fix ."
+  },
+  "bin": {
+    "zone-walker": "./index.js"
+  },
+  "files": [
+    "index.js"
+  ]
+}
