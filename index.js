@@ -104,9 +104,9 @@ async function walkZone(zone) {
             .catch(tryAgain(10000))
             .catch(tryAgain(10000))
             .catch(tryAgain(10000))
-            .catch(tryAgain(10000))
-            .catch(tryAgain(10000))
-            .catch(tryAgain(10000))
+            .catch(tryAgain(120000))
+            .catch(tryAgain(5000))
+            .catch(tryAgain(5000))
 
         if (nextName === zone) {
             console.error('Loop detected, ending')
@@ -114,6 +114,7 @@ async function walkZone(zone) {
         }
         console.log(nextName.slice(0, -1).toLowerCase())
         current = nextName
+        // await delay(10)
     }
 }
 
