@@ -79,15 +79,34 @@ function getNsecNextName(name) {
     })
 }
 
+function delay(ms) {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms)
+    })
+}
+
 async function walkZone(zone) {
     let current = zone
+    function tryAgain(ms) {
+        return async (err) => {
+            console.error('Received error on ' + current + ', retrying in ' + ms + 'ms')
+            console.error(err)
+            await delay(ms)
+            return getNsecNextName(current)
+        }
+    }
     while (current) {
+
         const nextName = await getNsecNextName(current)
+            .catch(tryAgain(500))
+            .catch(tryAgain(2500))
+            .catch(tryAgain(5000))
+
         if (nextName === zone) {
             console.error('Loop detected, ending')
             break
         }
-        console.log(nextName.slice(0, -1))
+        console.log(nextName.slice(0, -1).toLowerCase())
         current = nextName
     }
 }
