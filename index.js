@@ -5,15 +5,38 @@ const getdns = require('getdns')
 
 program
     .name('zone-walker')
-    .description('Walks through DNS zones using NSEC responses and write found domains to stdout.')
+    .description('Walks through DNS zones using NSEC responses and writes found domains to stdout.')
     .argument('<zone>', 'zone to traverse, e.g. "arpa."')
+    .option('-r, --recurse', 'if passed, zone-walker will act as a recursing resolver')
     .parse()
 
 const zone = program.args[0]
 
 const context = getdns.createContext({
-    resolution_type: getdns.RESOLUTION_RECURSING,
-    timeout: 1000,
+    resolution_type: program.opts().recurse ? getdns.RESOLUTION_RECURSING : getdns.RESOLUTION_STUB,
+    upstream_recursive_servers: [
+        // Google Public DNS
+        '8.8.8.8',
+        '8.8.4.4',
+        '2001:4860:4860::8888',
+        '2001:4860:4860::8844',
+        // Cloudflare DNS
+        '1.1.1.1',
+        '1.0.0.1',
+        '2606:4700:4700::1111',
+        '2606:4700:4700::1001',
+        // DNS.WATCH
+        '84.200.69.80',
+        '84.200.70.40',
+        '2001:1608:10:25::1c04:b12f',
+        '2001:1608:10:25::9249:d69b',
+        // quad9
+        '9.9.9.9',
+        '149.112.112.112',
+        '2620:fe::fe',
+        '2620:fe::9'
+    ],
+    timeout: 5000,
     return_dnssec_status: true
 })
 
@@ -96,7 +119,6 @@ async function walkZone(zone) {
         }
     }
     while (current) {
-
         const nextName = await getNsecNextName(current)
             .catch(tryAgain(500))
             .catch(tryAgain(2500))

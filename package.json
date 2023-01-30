@@ -1,7 +1,7 @@
 {
   "name": "zone-walker",
   "version": "0.0.0-dev5",
-  "description": "Walks through DNS zones using NSEC responses and write found domains to stdout.",
+  "description": "Walks through DNS zones using NSEC responses and writes found domains to stdout.",
   "main": "index.js",
   "repository": "https://github.com/flotwig/zone-walker",
   "author": "Zach Bloomquist <zone-walker@chary.us>",

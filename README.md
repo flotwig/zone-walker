@@ -28,13 +28,14 @@ npx zone-walker ...
 ```
 Usage: zone-walker [options] <zone>
 
-Walks through DNS zones using NSEC responses and write found domains to stdout.
+Walks through DNS zones using NSEC responses and writes found domains to stdout.
 
 Arguments:
-  zone        zone to traverse, e.g. "arpa."
+  zone           zone to traverse, e.g. "arpa."
 
 Options:
-  -h, --help  display help for command
+  -r, --recurse  if passed, zone-walker will act as a recursing resolver
+  -h, --help     display help for command
 ```
 
 ### Example
