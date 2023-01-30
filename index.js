@@ -1,4 +1,4 @@
-#!env node
+#!/usr/bin/env node
 
 const { program } = require('commander')
 const getdns = require('getdns')
