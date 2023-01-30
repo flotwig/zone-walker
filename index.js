@@ -56,7 +56,7 @@ function getNsecNextName(name) {
 
             const nsecs = res.replies_tree[0].authority.filter(record => {
                 // TODO: this could probably be made more specific
-                return record.type === getdns.RRTYPE_NSEC && record.name.endsWith(name)
+                return record.type === getdns.RRTYPE_NSEC && record.name.toLowerCase().endsWith(name.toLowerCase())
             })
 
             if (!nsecs.length) {
