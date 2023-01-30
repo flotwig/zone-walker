@@ -4,9 +4,26 @@ A CLI tool to walk through DNS zones using NSEC responses and enumerate the doma
 
 > ⚠️ zone-walker is beta software. Please report any issues encountered.
 
-## Usage
+## Installation
 
-Install via npx: `npm i -g zone-walker`, or use npx: `npx zone-walker ...`.
+Requirements:
+
+* `getdns` library installed - on Ubuntu, this requires the `libgetdns-dev` package.
+* Node.js (tested on Node.js 16)
+
+`zone-walker` is available via npm:
+
+```
+npm install --global zone-walker
+```
+
+Or use `npx`:
+
+```
+npx zone-walker ...
+```
+
+## Usage
 
 ```
 Usage: zone-walker [options] <zone>
@@ -31,10 +48,6 @@ in-addr.arpa
 in-addr-servers.arpa
 [ ... ]
 ```
-
-## Requirements
-
-* `getdns` library installed locally - on Ubuntu, this requires the `libgetdns-dev` package.
 
 ## See Also
 
