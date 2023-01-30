@@ -1,6 +1,6 @@
 {
   "name": "zone-walker",
-  "version": "0.0.0-dev1",
+  "version": "0.0.0-dev3",
   "description": "Walks through DNS zones using NSEC responses and write found domains to stdout.",
   "main": "index.js",
   "repository": "https://github.com/flotwig/zone-walker",
@@ -16,9 +16,7 @@
   "scripts": {
     "lint": "eslint --fix ."
   },
-  "bin": {
-    "zone-walker": "./index.js"
-  },
+  "bin": "index.js",
   "files": [
     "index.js"
   ]
