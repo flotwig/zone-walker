@@ -31,11 +31,11 @@ Usage: zone-walker [options] <zone>
 Walks through DNS zones using NSEC responses and writes found domains to stdout.
 
 Arguments:
-  zone           zone to traverse, e.g. "arpa."
+  zone        zone to traverse, e.g. "arpa."
 
 Options:
-  -r, --recurse  if passed, zone-walker will act as a recursing resolver
-  -h, --help     display help for command
+  -s, --stub  if passed, zone-walker will act as a stub resolver
+  -h, --help  display help for command
 ```
 
 ### Example
