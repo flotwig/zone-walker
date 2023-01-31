@@ -2,8 +2,6 @@
 
 const { program } = require('commander')
 const getdns = require('getdns')
-const dns = require('dns')
-const dnsPromises = dns.promises
 
 program
     .name('zone-walker')
@@ -127,25 +125,14 @@ async function walkZone(zone, context) {
     }
 }
 
-dnsPromises.resolveNs(zone).then(async (addresses) => {
-    console.error('Found ' + addresses.length + ' nameservers for ' + zone)
-    console.error(addresses)
-    const ipAddresses = await Promise.all(addresses.map(async (address) => {
-        const result = await dnsPromises.lookup(address)
-        return result.address
-    }))
-    console.error('Resolved to IPs:')
-
-    const context = getdns.createContext({
-        resolution_type: getdns.RESOLUTION_RECURSING,
-        upstream_recursive_servers: ipAddresses,
-        timeout: 5000,
-        return_dnssec_status: true
-    })
-
-    process.on('beforeExit', () => {
-        context.destroy()
-    })
-
-    walkZone(zone, context)
+const context = getdns.createContext({
+    resolution_type: getdns.RESOLUTION_STUB,
+    timeout: 5000,
+    return_dnssec_status: true
 })
+
+process.on('beforeExit', () => {
+    context.destroy()
+})
+
+walkZone(zone, context)
