@@ -96,6 +96,7 @@ function delay(ms) {
 }
 
 async function walkZone(zone, context) {
+    const minMs = 100
     let current = zone
     function tryAgain(ms) {
         return async (err) => {
@@ -106,6 +107,7 @@ async function walkZone(zone, context) {
         }
     }
     while (current) {
+        const started = Date.now()
         const nextName = await getNsecNextName(current, context)
             .catch(tryAgain(500))
             .catch(tryAgain(2500))
@@ -123,7 +125,10 @@ async function walkZone(zone, context) {
         }
         console.log(nextName.slice(0, -1).toLowerCase())
         current = nextName
-        // await delay(10)
+        const duration = Date.now() - started
+        if (duration < minMs) {
+            await delay(minMs - duration)
+        }
     }
 }
 
