@@ -12,18 +12,17 @@ program
 
 const zone = program.args[0]
 
-const context = getdns.createContext({
-    resolution_type: program.opts().stub ? getdns.RESOLUTION_STUB : getdns.RESOLUTION_RECURSING,
-    timeout: 5000,
-    return_dnssec_status: true
-})
+function incrementString(str) {
+    const buf = Buffer.from(str, 'ascii')
 
-process.on('beforeExit', () => {
-    context.destroy()
-})
+    for (let i = buf.length; i--; i <= 0) {
+        const char = buf[i]
+        if (char === 255) continue
+        buf.writeUint8(char + 1, i)
+        break
+    }
 
-const extensions = {
-    dnssec_return_only_secure: true
+    return buf.toString('ascii')
 }
 
 function incrementName(name) {
@@ -31,7 +30,12 @@ function incrementName(name) {
     // https://www.rfc-editor.org/rfc/rfc4034#section-6
     // https://bert-hubert.blogspot.com/2015/10/how-to-do-fast-canonical-ordering-of.html
     const labels = name.split('.')
+    if (labels[0].length === 63) {
+        // avoid overflowing max label length
+        labels[0] = incrementString(labels[0])
+    } else {
     labels[0] = labels[0] + '\001'
+    }
     return labels.join('.')
 }
 
