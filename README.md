@@ -34,7 +34,6 @@ Arguments:
   zone        zone to traverse, e.g. "arpa."
 
 Options:
-  -s, --stub  if passed, zone-walker will act as a stub resolver
   -h, --help  display help for command
 ```
 
