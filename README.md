@@ -31,10 +31,11 @@ Usage: zone-walker [options] <zone>
 Walks through DNS zones using NSEC responses and writes found domains to stdout.
 
 Arguments:
-  zone        zone to traverse, e.g. "arpa."
+  zone             zone to traverse, e.g. "arpa."
 
 Options:
-  -h, --help  display help for command
+  -R, --rps <rps>  maximum number of domains to process per second (default: 10)
+  -h, --help       display help for command
 ```
 
 ### Example

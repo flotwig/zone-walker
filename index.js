@@ -9,7 +9,7 @@ program
     .name('zone-walker')
     .description('Walks through DNS zones using NSEC responses and writes found domains to stdout.')
     .argument('<zone>', 'zone to traverse, e.g. "arpa."')
-    .option('-s, --stub', 'if passed, zone-walker will act as a stub resolver')
+    .option('-R, --rps <rps>', 'maximum number of domains to process per second', 10)
     .parse()
 
 const zone = program.args[0]
@@ -29,8 +29,6 @@ function incrementString(str) {
 
 function incrementName(name) {
     // TODO: refine this, could skip some labels?
-    // https://www.rfc-editor.org/rfc/rfc4034#section-6
-    // https://bert-hubert.blogspot.com/2015/10/how-to-do-fast-canonical-ordering-of.html
     const labels = name.split('.')
     if (labels[0].length === 63) {
         // avoid overflowing max label length
@@ -39,6 +37,15 @@ function incrementName(name) {
         labels[0] = labels[0] + '\001'
     }
     return labels.join('.')
+}
+
+// https://serverfault.com/a/1121552/483223
+// https://www.rfc-editor.org/rfc/rfc4034#section-6
+// https://bert-hubert.blogspot.com/2015/10/how-to-do-fast-canonical-ordering-of.html
+function compareName(a, b) {
+    const aReverse = a.split('.').filter((x) => x).reverse().join('.')
+    const bReverse = b.split('.').filter((x) => x).reverse().join('.')
+    return aReverse.toLowerCase().localeCompare(bReverse.toLowerCase())
 }
 
 function getNsecNextName(name, context) {
@@ -63,22 +70,28 @@ function getNsecNextName(name, context) {
                 return reject(new Error('Missing replies tree for ' + incremented + ' Does this zone use DNSSEC?'))
             }
 
-            const nsecs = res.replies_tree[0].authority.filter(record => {
-                // TODO: this could probably be made more specific
-                return record.type === getdns.RRTYPE_NSEC && record.name.toLowerCase().endsWith(name.toLowerCase())
+            let nsecs = res.replies_tree[0].authority.filter(record => {
+                if (!record.rdata.next_domain_name) return false
+                // only next_domain_names greater than the current name
+                return compareName(incremented, record.rdata.next_domain_name) < 0
+            }).sort((a, b) => {
+                return compareName(a.rdata.next_domain_name, b.rdata.next_domain_name)
             })
 
-            if (!nsecs.length) {
-                console.error(res.replies_tree[0].authority)
-                return reject(new Error('Missing NSEC on ' + incremented + ', cannot proceed.'))
-            }
-
-            if (nsecs.length > 1) {
-                console.error(nsecs)
-                return reject(new Error('Multiple NSEC on ' + incremented + ', cannot proceed'))
+            if (nsecs.length === 0) {
+                // fall-back - necessary for end, loop when there is no greater domain
+                nsecs = res.replies_tree[0].authority.filter(record => {
+                    // TODO: this could probably be made more specific
+                    return record.type === getdns.RRTYPE_NSEC && record.name.toLowerCase().endsWith(name.toLowerCase())
+                })
             }
 
             const nsec = nsecs[0]
+
+            if (!nsec) {
+                console.error(res.replies_tree[0].authority)
+                reject(new Error('Missing nsec on ' + incremented))
+            }
 
             if (!nsec.rdata.next_domain_name) {
                 reject(new Error('Missing next_domain_name on ' + incremented + ', cannot proceed'))
@@ -96,7 +109,7 @@ function delay(ms) {
 }
 
 async function walkZone(zone, context) {
-    const minMs = 100
+    const minMs = 1000 / program.opts().rps
     let current = zone
     function tryAgain(ms) {
         return async (err) => {
