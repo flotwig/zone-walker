@@ -10,6 +10,7 @@ program
     .description('Walks through DNS zones using NSEC responses and writes found domains to stdout.')
     .argument('<zone>', 'zone to traverse, e.g. "arpa."')
     .option('-R, --rps <rps>', 'maximum number of domains to process per second', 10)
+    .option('-S, --start <domain>', 'start walking from after a specific domain (exclusive)')
     .parse()
 
 const zone = program.args[0]
@@ -52,7 +53,7 @@ function getNsecNextName(name, context) {
     const extensions = {
         dnssec_return_only_secure: true
     }
-    const incremented = name === zone ? incrementName(`.${name}`) : incrementName(name)
+    const incremented = incrementName(name)
     return new Promise((resolve, reject) => {
         context.general(incremented, getdns.RRTYPE_A, extensions, (err, res) => {
             if (err) {
@@ -164,5 +165,7 @@ dnsPromises.resolveNs(zone).then(async (addresses) => {
         context.destroy()
     })
 
-    walkZone(zone, context)
+    const start = program.opts().start || `.${zone}`
+
+    walkZone(start, context)
 })
