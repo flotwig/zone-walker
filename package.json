@@ -11,13 +11,21 @@
     "getdns": "^4.1.0"
   },
   "devDependencies": {
-    "eslint": "^8.33.0"
+    "eslint": "^8.33.0",
+    "eslint-plugin-jest": "^27.2.1",
+    "jest": "^29.4.1"
   },
   "scripts": {
-    "lint": "eslint --fix ."
+    "lint": "eslint --fix .",
+    "start": "./index.js",
+    "test": "jest"
   },
   "bin": "index.js",
   "files": [
-    "index.js"
-  ]
+    "index.js",
+    "utils.js"
+  ],
+  "jest": {
+    "transform": {}
+  }
 }
