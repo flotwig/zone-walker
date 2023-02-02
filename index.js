@@ -157,6 +157,16 @@ dnsPromises.resolveNs(zone).then(async (addresses) => {
     const context = getdns.createContext({
         resolution_type: getdns.RESOLUTION_RECURSING,
         upstream_recursive_servers: ipAddresses,
+    }
+}).catch(() => {
+    console.error('An error occurred while finding nameservers for ' + zone + ', continuing')
+    return {
+        resolution_type: getdns.RESOLUTION_RECURSING,
+        upstream_recursive_servers: []
+    }
+}).then(contextOpts => {
+    const context = getdns.createContext({
+        ...contextOpts,
         timeout: 5000,
         return_dnssec_status: true
     })
