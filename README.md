@@ -51,6 +51,16 @@ in-addr-servers.arpa
 [ ... ]
 ```
 
+## Contributing
+
+Bug fixes and features are welcome.
+
+Run `yarn` locally to install dependencies.
+
+To run the binary locally, use `yarn start ...`.
+
+To run tests, use `yarn test`. For more information on testing see [`test/README.md`](./test/README.md)
+
 ## See Also
 
 * [`zone-walks`](https://github.com/flotwig/zone-walks/) - updated repository of TLD walks created using this tool
