@@ -1,0 +1,33 @@
+name: Test
+on:
+  - push
+  - pull_request
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          cache: 'yarn'
+      - name: Install getdns
+        run: sudo apt-get install libgetdns-dev
+      - name: Install Dependencies
+        run: yarn
+      - name: Run tests
+        run: yarn test
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          cache: 'yarn'
+      - name: Install getdns
+        run: sudo apt-get install libgetdns-dev
+      - name: Install Dependencies
+        run: yarn
+      - name: Run tests
+        run: yarn lint
