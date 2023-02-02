@@ -16,7 +16,7 @@
     "jest": "^29.4.1"
   },
   "scripts": {
-    "lint": "eslint --fix .",
+    "lint": "eslint .",
     "start": "./index.js",
     "test": "jest"
   },
