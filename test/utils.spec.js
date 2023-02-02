@@ -40,9 +40,7 @@ describe('compareName', () => {
             'z.example',
             '\001.z.example',
             '*.z.example',
-            // NOTE: this gets sorted before *.z.example due to use of localeCompare, but
-            // theoretically it shouldn't affect what we are doing here
-            // '\200.z.example'
+            '\200.z.example'
         ]
 
         const shuffled = [...expected].sort(() => Math.random() * 2 - 1)

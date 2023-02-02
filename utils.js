@@ -32,9 +32,11 @@ function incrementName(name) {
 // https://www.rfc-editor.org/rfc/rfc4034#section-6.1
 // https://bert-hubert.blogspot.com/2015/10/how-to-do-fast-canonical-ordering-of.html
 function compareName(a, b) {
-    const aReverse = a.split('.').filter((x) => x).reverse().join('.')
-    const bReverse = b.split('.').filter((x) => x).reverse().join('.')
-    return aReverse.toLowerCase().localeCompare(bReverse.toLowerCase())
+    const aReverse = a.split('.').filter((x) => x).reverse().join('.').toLowerCase()
+    const bReverse = b.split('.').filter((x) => x).reverse().join('.').toLowerCase()
+    if (aReverse === bReverse) return 0
+    if (aReverse > bReverse) return 1
+    return -1
 }
 
 module.exports = {
