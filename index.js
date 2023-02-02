@@ -8,9 +8,9 @@ const dnsPromises = dns.promises
 program
     .name('zone-walker')
     .description('Walks through DNS zones using NSEC responses and writes found domains to stdout.')
-    .argument('<zone>', 'zone to traverse, e.g. "arpa."')
+    .argument('<zone>', 'zone to traverse, e.g. "arpa."', normalizeName)
     .option('-R, --rps <rps>', 'maximum number of domains to process per second', 10)
-    .option('-S, --start <domain>', 'start walking from after a specific domain (exclusive)')
+    .option('-S, --start <domain>', 'start walking from after a specific domain (exclusive)', normalizeName)
     .parse()
 
 const zone = program.args[0]
