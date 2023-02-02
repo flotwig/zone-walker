@@ -4,6 +4,7 @@ const { program } = require('commander')
 const getdns = require('getdns')
 const dns = require('dns')
 const dnsPromises = dns.promises
+const { normalizeName, incrementName, compareName } = require('./utils')
 
 program
     .name('zone-walker')
@@ -13,41 +14,7 @@ program
     .option('-S, --start <domain>', 'start walking from after a specific domain (exclusive)', normalizeName)
     .parse()
 
-const zone = program.args[0]
-
-function incrementString(str) {
-    const buf = Buffer.from(str, 'ascii')
-
-    for (let i = buf.length; i--; i <= 0) {
-        const char = buf[i]
-        if (char === 255) continue
-        buf.writeUint8(char + 1, i)
-        break
-    }
-
-    return buf.toString('ascii')
-}
-
-function incrementName(name) {
-    // TODO: refine this, could skip some labels?
-    const labels = name.split('.')
-    if (labels[0].length === 63) {
-        // avoid overflowing max label length
-        labels[0] = incrementString(labels[0])
-    } else {
-        labels[0] = labels[0] + '\001'
-    }
-    return labels.join('.')
-}
-
-// https://serverfault.com/a/1121552/483223
-// https://www.rfc-editor.org/rfc/rfc4034#section-6
-// https://bert-hubert.blogspot.com/2015/10/how-to-do-fast-canonical-ordering-of.html
-function compareName(a, b) {
-    const aReverse = a.split('.').filter((x) => x).reverse().join('.')
-    const bReverse = b.split('.').filter((x) => x).reverse().join('.')
-    return aReverse.toLowerCase().localeCompare(bReverse.toLowerCase())
-}
+const zone = program.processedArgs[0]
 
 function getNsecNextName(name, context) {
     const extensions = {
@@ -98,7 +65,7 @@ function getNsecNextName(name, context) {
                 reject(new Error('Missing next_domain_name on ' + incremented + ', cannot proceed'))
             }
 
-            resolve(nsec.rdata.next_domain_name)
+            resolve(nsec.rdata.next_domain_name.toLowerCase())
         })
     })
 }
@@ -109,9 +76,9 @@ function delay(ms) {
     })
 }
 
-async function walkZone(zone, context) {
+async function walkZone(start, suffix, context) {
     const minMs = 1000 / program.opts().rps
-    let current = zone
+    let current = start
     function tryAgain(ms) {
         return async (err) => {
             console.error('Received error on ' + current + ', retrying in ' + ms + 'ms')
@@ -133,11 +100,12 @@ async function walkZone(zone, context) {
             .catch(tryAgain(5000))
             .catch(tryAgain(5000))
 
-        if (nextName === zone) {
-            console.error('Loop detected, ending')
+        if (!nextName.endsWith(suffix)) {
+            console.error(`Next zone ${nextName} does not end with ${suffix}, ending`)
             break
         }
-        console.log(nextName.slice(0, -1).toLowerCase())
+
+        console.log(nextName.slice(0, -1))
         current = nextName
         const duration = Date.now() - started
         if (duration < minMs) {
@@ -153,8 +121,7 @@ dnsPromises.resolveNs(zone).then(async (addresses) => {
         return result.address
     }))
     console.error('Resolved to IPs:' + ipAddresses)
-
-    const context = getdns.createContext({
+    return {
         resolution_type: getdns.RESOLUTION_RECURSING,
         upstream_recursive_servers: ipAddresses,
     }
@@ -175,7 +142,8 @@ dnsPromises.resolveNs(zone).then(async (addresses) => {
         context.destroy()
     })
 
-    const start = program.opts().start || `.${zone}`
+    const suffix = `.${zone}`
+    const start = program.opts().start || suffix
 
-    walkZone(start, context)
+    walkZone(start, suffix, context)
 })
