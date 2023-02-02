@@ -77,28 +77,22 @@ function delay(ms) {
 }
 
 async function walkZone(start, suffix, context) {
+    const maxFailureDelay = 2 * 60 * 1000
     const minMs = 1000 / program.opts().rps
     let current = start
-    function tryAgain(ms) {
-        return async (err) => {
-            console.error('Received error on ' + current + ', retrying in ' + ms + 'ms')
+    async function attempt(failureDelay) {
+        try {
+            return await getNsecNextName(current, context)
+        } catch (err) {
+            console.error('Received error on ' + current + ', retrying in ' + failureDelay + 'ms')
             console.error(err)
-            await delay(ms)
-            return getNsecNextName(current, context)
+            await delay(failureDelay)
+            return attempt(Math.min(Math.round(failureDelay * 1.5), maxFailureDelay))
         }
     }
     while (current) {
         const started = Date.now()
-        const nextName = await getNsecNextName(current, context)
-            .catch(tryAgain(500))
-            .catch(tryAgain(2500))
-            .catch(tryAgain(5000))
-            .catch(tryAgain(10000))
-            .catch(tryAgain(10000))
-            .catch(tryAgain(10000))
-            .catch(tryAgain(120000))
-            .catch(tryAgain(5000))
-            .catch(tryAgain(5000))
+        const nextName = await attempt(500)
 
         if (!nextName.endsWith(suffix)) {
             console.error(`Next zone ${nextName} does not end with ${suffix}, ending`)
