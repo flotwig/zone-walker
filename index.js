@@ -58,11 +58,11 @@ function getNsecNextName(name, context) {
 
             if (!nsec) {
                 console.error(res.replies_tree[0].authority)
-                reject(new Error('Missing nsec on ' + incremented))
+                return reject(new Error('Missing nsec on ' + incremented))
             }
 
             if (!nsec.rdata.next_domain_name) {
-                reject(new Error('Missing next_domain_name on ' + incremented + ', cannot proceed'))
+                return reject(new Error('Missing next_domain_name on ' + incremented + ', cannot proceed'))
             }
 
             resolve(nsec.rdata.next_domain_name.toLowerCase())
