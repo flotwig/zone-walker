@@ -1,17 +1,30 @@
 #!/usr/bin/env node
 
-const { program } = require('commander')
+const { program, InvalidArgumentError } = require('commander')
 const getdns = require('getdns')
 const dns = require('dns')
 const dnsPromises = dns.promises
 const { normalizeName, incrementName, compareName } = require('./utils')
 
+const isDebugged = process.env['DEBUG'] && process.env['DEBUG'].includes('zone-walker')
+
+function debug(...args) {
+    if (!isDebugged) return
+    console.error('zone-walker debug:', ...args)
+}
+
+const validDomainChars = '0123456789abcdefghijklmnopqrstuvwxyz'
+
 program
     .name('zone-walker')
     .description('Walks through DNS zones using NSEC responses and writes found domains to stdout.')
     .argument('<zone>', 'zone to traverse, e.g. "arpa."', normalizeName)
+    .option('-P, --parallel <parallelism>', `number of parallel searches to run (max: ${validDomainChars.length})`, (v) => {
+        if (v < 1 || v > validDomainChars.length) throw new InvalidArgumentError(`parallel must be between 1 and ${validDomainChars.length}`)
+        return Number(v)
+    }, 1)
     .option('-R, --rps <rps>', 'maximum number of domains to process per second', 10)
-    .option('-S, --start <domain>', 'start walking from after a specific domain (exclusive)', normalizeName)
+    .option('-S, --start <domain>', 'start walking from after a specific domain. ignored if --parallel is passed (exclusive)', normalizeName)
     .parse()
 
 const zone = program.processedArgs[0]
@@ -47,17 +60,11 @@ function getNsecNextName(name, context) {
             })
 
             if (nsecs.length === 0) {
-                // fall-back - necessary for end, loop when there is no greater domain
-                nsecs = res.replies_tree[0].authority.filter(record => {
+                // fall-back for when domains loop back to the start
+                for (const record of res.replies_tree[0].authority) {
                     // TODO: this could probably be made more specific
-                    return record.type === getdns.RRTYPE_NSEC && record.name.toLowerCase().endsWith(name.toLowerCase())
-                })
-            }
-
-            if (nsecs.length === 0) {
-                // fall-back - some TLDs loop back around to the start (.game, .kz)
-                for (const record in res.replies_tree[0].authority) {
                     if (record.type === getdns.RRTYPE_NSEC && compareName(name, record.rdata.next_domain_name) >= 0) return resolve('')
+                    if (record.type === getdns.RRTYPE_NSEC && normalizeName(name) === normalizeName(record.rdata.next_domain_name)) return resolve('')
                 }
             }
 
@@ -83,7 +90,8 @@ function delay(ms) {
     })
 }
 
-async function walkZone(start, suffix, context) {
+async function walkZone(start, suffix, end, context) {
+    debug('Walking zone from', start, 'to', end, 'expecting suffix', suffix)
     const maxFailureDelay = 2 * 60 * 1000
     const minMs = 1000 / program.opts().rps
     let current = start
@@ -101,13 +109,18 @@ async function walkZone(start, suffix, context) {
         const started = Date.now()
         const nextName = await attempt(500)
 
+        if (end && compareName(nextName, end) > 0) {
+            debug('End reached starting at', start, 'ending at', end)
+            break
+        }
+
         if (compareName(nextName, suffix) === 0) {
-            console.error(`Next zone ${nextName} is equal to ${suffix}, ending`)
+            debug(`Next zone ${nextName} is equal to ${suffix}, ending`)
             break
         }
 
         if (!nextName.endsWith(suffix)) {
-            console.error(`Next zone ${nextName} does not end with ${suffix}, ending`)
+            debug(`Next zone ${nextName} does not end with ${suffix}, ending`)
             break
         }
 
@@ -149,7 +162,22 @@ dnsPromises.resolveNs(zone).then(async (addresses) => {
     })
 
     const suffix = `.${zone}`
-    const start = program.opts().start || suffix
 
-    walkZone(start, suffix, context)
+    if (program.opts().parallel === 1) {
+        const start = program.opts().start || suffix
+        return walkZone(start, suffix, undefined, context)
+    } else {
+        const starts = []
+        const step = Math.max(Math.floor(validDomainChars.length / program.opts().parallel))
+        let i = 0
+        while (i < validDomainChars.length) {
+            starts.push(validDomainChars[i])
+            i += step
+        }
+        debug('Using chunks starting with', starts)
+        return Promise.all(starts.map((start, i) => {
+            const end = (i === validDomainChars.length - 1) ? undefined : starts[i + 1]
+            return walkZone(i === 0 ? suffix : (start + suffix), suffix, end ? end + suffix : undefined, context)
+        }))
+    }
 })
