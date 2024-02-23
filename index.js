@@ -54,6 +54,13 @@ function getNsecNextName(name, context) {
                 })
             }
 
+            if (nsecs.length === 0) {
+                // fall-back - some TLDs loop back around to the start (.game, .kz)
+                for (const record in res.replies_tree[0].authority) {
+                    if (record.type === getdns.RRTYPE_NSEC && compareName(name, record.rdata.next_domain_name) >= 0) return resolve('')
+                }
+            }
+
             const nsec = nsecs[0]
 
             if (!nsec) {
@@ -93,6 +100,11 @@ async function walkZone(start, suffix, context) {
     while (current) {
         const started = Date.now()
         const nextName = await attempt(500)
+
+        if (compareName(nextName, suffix) === 0) {
+            console.error(`Next zone ${nextName} is equal to ${suffix}, ending`)
+            break
+        }
 
         if (!nextName.endsWith(suffix)) {
             console.error(`Next zone ${nextName} does not end with ${suffix}, ending`)
